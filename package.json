@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "School SaaS Platform with Super Admin, School Admin, and AI-powered Academic Analysis modules",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
