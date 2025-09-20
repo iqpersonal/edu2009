@@ -1,0 +1,22 @@
+{
+  "name": "edu2009-school-saas",
+  "version": "1.0.0",
+  "description": "School SaaS Platform with Super Admin, School Admin, and AI-powered Academic Analysis modules",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "school",
+    "saas",
+    "education",
+    "supabase",
+    "academic-analysis"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "papaparse": "^5.4.1"
+  }
+}
