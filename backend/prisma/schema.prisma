@@ -1,0 +1,254 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  SCHOOL_ADMIN
+  ACADEMIC_DIRECTOR
+  HEAD_OF_SECTION
+  SUBJECT_COORDINATOR
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum AssessmentType {
+  QUIZ
+  TEST
+  EXAM
+  ASSIGNMENT
+  PROJECT
+  HOMEWORK
+}
+
+enum Term {
+  FIRST
+  SECOND
+  THIRD
+  SUMMER
+}
+
+model School {
+  id          String   @id @default(cuid())
+  name        String
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  students    Student[]
+  subjects    Subject[]
+  academicYears AcademicYear[]
+  sections    Section[]
+
+  @@map("schools")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schoolId  String
+  school    School @relation(fields: [schoolId], references: [id])
+
+  teacherSubjects Subject[] @relation("TeacherSubjects")
+  assessments Assessment[]
+  aiRecommendations AIRecommendation[]
+
+  @@map("users")
+}
+
+model Student {
+  id           String   @id @default(cuid())
+  studentId    String   @unique
+  firstName    String
+  lastName     String
+  dateOfBirth  DateTime
+  email        String?
+  phone        String?
+  address      String?
+  guardianName String?
+  guardianPhone String?
+  guardianEmail String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  schoolId     String
+  school       School @relation(fields: [schoolId], references: [id])
+  
+  sectionId    String
+  section      Section @relation(fields: [sectionId], references: [id])
+
+  assessmentResults AssessmentResult[]
+  progressReports   ProgressReport[]
+  aiRecommendations AIRecommendation[]
+
+  @@map("students")
+}
+
+model Section {
+  id        String   @id @default(cuid())
+  name      String
+  grade     String
+  capacity  Int?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schoolId  String
+  school    School @relation(fields: [schoolId], references: [id])
+
+  students  Student[]
+  subjects  Subject[]
+
+  @@map("sections")
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String
+  code        String
+  description String?
+  credits     Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schoolId    String
+  school      School @relation(fields: [schoolId], references: [id])
+
+  sectionId   String
+  section     Section @relation(fields: [sectionId], references: [id])
+
+  teachers    User[] @relation("TeacherSubjects")
+  assessments Assessment[]
+
+  @@map("subjects")
+}
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  year      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  isCurrent Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schoolId  String
+  school    School @relation(fields: [schoolId], references: [id])
+
+  assessments Assessment[]
+  progressReports ProgressReport[]
+
+  @@map("academic_years")
+}
+
+model Assessment {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  type        AssessmentType
+  maxScore    Float
+  passingScore Float?
+  term        Term
+  date        DateTime
+  duration    Int? // in minutes
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  subjectId   String
+  subject     Subject @relation(fields: [subjectId], references: [id])
+
+  createdById String
+  createdBy   User @relation(fields: [createdById], references: [id])
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  results     AssessmentResult[]
+
+  @@map("assessments")
+}
+
+model AssessmentResult {
+  id          String   @id @default(cuid())
+  score       Float
+  feedback    String?
+  submittedAt DateTime?
+  gradedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  studentId    String
+  student      Student @relation(fields: [studentId], references: [id])
+
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@unique([studentId, assessmentId])
+  @@map("assessment_results")
+}
+
+model ProgressReport {
+  id          String   @id @default(cuid())
+  term        Term
+  overallGrade String?
+  comments    String?
+  attendance  Float?
+  behavior    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  studentId      String
+  student        Student @relation(fields: [studentId], references: [id])
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentId, academicYearId, term])
+  @@map("progress_reports")
+}
+
+model AIRecommendation {
+  id          String   @id @default(cuid())
+  type        String   // "academic", "behavioral", "learning_style", etc.
+  title       String
+  content     String
+  priority    String   // "high", "medium", "low"
+  isRead      Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  studentId   String?
+  student     Student? @relation(fields: [studentId], references: [id])
+
+  createdById String
+  createdBy   User @relation(fields: [createdById], references: [id])
+
+  @@map("ai_recommendations")
+}
